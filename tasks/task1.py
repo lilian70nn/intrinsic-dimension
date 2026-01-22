@@ -30,28 +30,23 @@ def task1_1_fig3b_pretrained_cnn_id(show=True,savepath=None,device=None):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # --- Pretrained CNN models, their depth definitions, and intrinsic dimension estimators ---
-    # models = {
-    #     "VGG19": vgg19(weights=VGG19_Weights.IMAGENET1K_V1),
-    #     "VGG16": vgg16(weights=VGG16_Weights.IMAGENET1K_V1),
-    #     "VGG13": vgg13(weights=VGG13_Weights.IMAGENET1K_V1),
-    #     "VGG11": vgg11(weights=VGG11_Weights.IMAGENET1K_V1),
-    #     "VGG19_BN": vgg19_bn(weights=VGG19_BN_Weights.IMAGENET1K_V1),
-    #     "VGG16_BN": vgg16_bn(weights=VGG16_BN_Weights.IMAGENET1K_V1),
-    #     "VGG13_BN": vgg13_bn(weights=VGG13_BN_Weights.IMAGENET1K_V1),
-    #     "VGG11_BN": vgg11_bn(weights=VGG11_BN_Weights.IMAGENET1K_V1),
-    #     "AlexNet": alexnet(weights=AlexNet_Weights.IMAGENET1K_V1),
-    #     "ResNet152": resnet152(weights=ResNet152_Weights.IMAGENET1K_V1),
-    #     "ResNet101": resnet101(weights=ResNet101_Weights.IMAGENET1K_V1),
-    #     "ResNet50": resnet50(weights=ResNet50_Weights.IMAGENET1K_V1),
-    #     "ResNet34": resnet34(weights=ResNet34_Weights.IMAGENET1K_V1),
-    #     "ResNet18": resnet18(weights=ResNet18_Weights.IMAGENET1K_V1),
-    # }
-
     models = {
         "VGG19": vgg19(weights=VGG19_Weights.IMAGENET1K_V1),
+        "VGG16": vgg16(weights=VGG16_Weights.IMAGENET1K_V1),
+        "VGG13": vgg13(weights=VGG13_Weights.IMAGENET1K_V1),
+        "VGG11": vgg11(weights=VGG11_Weights.IMAGENET1K_V1),
+        "VGG19_BN": vgg19_bn(weights=VGG19_BN_Weights.IMAGENET1K_V1),
+        "VGG16_BN": vgg16_bn(weights=VGG16_BN_Weights.IMAGENET1K_V1),
+        "VGG13_BN": vgg13_bn(weights=VGG13_BN_Weights.IMAGENET1K_V1),
+        "VGG11_BN": vgg11_bn(weights=VGG11_BN_Weights.IMAGENET1K_V1),
+        "AlexNet": alexnet(weights=AlexNet_Weights.IMAGENET1K_V1),
         "ResNet152": resnet152(weights=ResNet152_Weights.IMAGENET1K_V1),
-
+        "ResNet101": resnet101(weights=ResNet101_Weights.IMAGENET1K_V1),
+        "ResNet50": resnet50(weights=ResNet50_Weights.IMAGENET1K_V1),
+        "ResNet34": resnet34(weights=ResNet34_Weights.IMAGENET1K_V1),
+        "ResNet18": resnet18(weights=ResNet18_Weights.IMAGENET1K_V1),
     }
+
 
     depth_fns = {
         "VGG19": getDepths,
@@ -84,10 +79,9 @@ def task1_1_fig3b_pretrained_cnn_id(show=True,savepath=None,device=None):
 
 
     # --- ImageNet data source and selected categories  ---
-    src_dir = "/content/drive/MyDrive/imagenet_training_single_objs"
-    #src_dir = "data/imagenet_training_single_objs"
-    #file_names = ["n01882714/0","n02086240/0","n02087394/0","n02094433/0","n02100583/0","n02100735/0","n02279972/0"]
-    file_names = ["n01882714/0"]
+    #src_dir = "/content/drive/MyDrive/imagenet_training_single_objs"
+    src_dir = "data/imagenet_training_single_objs"
+    file_names = ["n01882714/0","n02086240/0","n02087394/0","n02094433/0","n02100583/0","n02100735/0","n02279972/0"]
 
 
     ID_all_category = []
@@ -96,8 +90,7 @@ def task1_1_fig3b_pretrained_cnn_id(show=True,savepath=None,device=None):
         print(f"Category{i+1}/{len(file_names)}")
         file_name = os.path.join(src_dir,name)
         all_imgs = [os.path.join(file_name, f) for f in os.listdir(file_name) if f.endswith(".JPEG")]
-        small_imgs = all_imgs[:50]
-        dataset = PathListDataset(small_imgs, transform=data_transform)
+        dataset = PathListDataset(all_imgs, transform=data_transform)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=100, shuffle=True,num_workers=2)
 
         id_for_one_category = compute_id_dynamics_across_models(models,
