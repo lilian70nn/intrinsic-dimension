@@ -29,7 +29,7 @@ nltk.download('omw-1.4')
 
 
 def tokenization(batch, tokenizer, text_key, max_length=512):
-    return tokenizer(batch[text_key], truncation=True, max_length=max_length)
+    return tokenizer(batch[text_key], truncation=True, padding=True,max_length=max_length)
 
 def compute_id_nlp(X,model,tokenizer,text_key,fraction=0.9,verbose=False,device=None):
     if device is None:
