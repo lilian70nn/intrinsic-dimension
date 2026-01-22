@@ -1,0 +1,12 @@
+torch
+torchvision
+numpy
+scipy
+matplotlib
+tqdm
+transformers
+datasets
+scikit-learn
+pillow
+pytorch-pretrained-biggan
+tabm
