@@ -10,3 +10,4 @@ scikit-learn
 pillow
 pytorch-pretrained-biggan
 tabm
+nltk
