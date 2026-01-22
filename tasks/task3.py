@@ -1,5 +1,6 @@
 import random
 from functools import partial
+import argparse
 
 import torch
 import numpy as np
@@ -165,6 +166,13 @@ biggan = BigGAN.from_pretrained('biggan-deep-128')
 biggan.eval()
 
 def task3_2_1(num_samples=2000, true_ids=None, device=None):
+    
+    """
+    Task – Simulation with known ID:
+    Study how ID estimates change with increasing true intrinsic dimension
+    using GAN-based restricted latent subspace sampling.
+    """
+
     if device is None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -190,6 +198,14 @@ def task3_2_1(num_samples=2000, true_ids=None, device=None):
 
 
 def task3_2_2(device=None):
+
+    """
+    Task – Simulation with known ID:
+    Study how ID estimates change with increasing sample size.
+    Comparison between:
+        (i) Linear factor model sampling
+        (ii) GAN-based restricted latent subspace sampling
+    """
 
     if device is None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -235,6 +251,13 @@ def task3_2_2(device=None):
 
 
 def task3_2_3(R=20,d=16,p=5000,noise_dim=2000,sigma=1.0,device=None):
+
+    """
+    Task – Effect of data regime:
+    Compare ID estimation behavior in p >> n versus n >> p settings
+    for both TwoNN and MLE estimators.
+    """
+
     if device is None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -295,6 +318,13 @@ def task3_2_3(R=20,d=16,p=5000,noise_dim=2000,sigma=1.0,device=None):
 
 
 def task3_2_4(data_size=3000, d=16, R=8,device=None):
+
+    """
+    Task – Layer-wise analysis:
+    Investigate whether early/middle/late layers of CNNs
+    recover the true intrinsic dimension of input data.
+    """
+
     if device is None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -381,3 +411,26 @@ def task3_2_4(data_size=3000, d=16, R=8,device=None):
     plt.show()
 
 
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--task",
+        type=str,
+        default="all",
+        choices=["all", "3_1", "3_2_1", "3_2_2", "3_2_3", "3_2_4"]
+    )
+    args = parser.parse_args()
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if args.task in ["all", "3_1"]:
+        task3_1(device=device)
+    if args.task in ["all", "3_2_1"]:
+        task3_2_1(device=device)
+    if args.task in ["all", "3_2_2"]:
+        task3_2_2(device=device)
+    if args.task in ["all", "3_2_3"]:
+        task3_2_3(device=device)
+    if args.task in ["all", "3_2_4"]:
+        task3_2_4(device=device)

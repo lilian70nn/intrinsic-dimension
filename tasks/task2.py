@@ -1,7 +1,9 @@
+from functools import partial
+
 import torch
 import torch.nn as nn
-from functools import partial
 from sklearn.datasets import fetch_openml
+
 from src.id.estimator import twonn_id
 from src.id.compute import compute_id_dynamics_across_models
 from src.train_and_test import train_and_compute_id
