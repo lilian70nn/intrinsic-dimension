@@ -272,11 +272,7 @@ MODELS = {
     "TabM": lambda n_num, cat_card, k, num_classes: TabM(n_num, cat_card, k=k, num_classes=num_classes),
 }
 
-DATASETS = {
-    "adult": 1590,
-    "higgs": 45551,
-    "covertype": 150,
-}
+
 
 depth_fns = {"RealMLP":getDepths_RealMLP_TD,
              "StandardMLP":getDepths_StandardMLP,
@@ -287,7 +283,7 @@ depth_fns = {"RealMLP":getDepths_RealMLP_TD,
 def evaluate_model_on_data(data_id, model_name, num_classes, num_train=2000, num_test=2000,
                            epochs=15, id_logging_interval=15, estimator=None,
                            depth_fns=depth_fns, device=None, criterion=None,
-                           y_lim=30,k=10, savepath=None, show=True):
+                           y_lim=50,k=10, savepath=None, show=True):
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if estimator is None:
