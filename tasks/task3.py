@@ -15,15 +15,13 @@ from scipy.stats import spearmanr
 from pytorch_pretrained_biggan import (BigGAN, one_hot_from_names, truncated_noise_sample)
 from scipy.stats import ttest_ind
 import torchvision.models as models
-import nltk
+
 
 from src.id.estimator import twonn_id,mle_id
 from src.depths import getDepths
 from src.id.compute import compute_id_dynamics_across_models
 from src.plots import title_to_filename
 
-nltk.download('wordnet')
-nltk.download('omw-1.4')
 
 
 
