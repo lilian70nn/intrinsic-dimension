@@ -258,7 +258,10 @@ def report_id_statistics(model, estimator, train_loader, test_loader, data_name,
 
     id_dynamics = {**id_dynamics_untrained,
                    **id_dynamics_trained}
-    title = f"Intrinsic Dimension on {data_name} Before And After Training (TwoNN)"
+    title = (
+    f"Intrinsic Dimension on {data_name} "
+    f"({model_name}) Before and After Training (TwoNN)"
+    )
     plot_fig3b(id_dynamics,"TwoNN",title,annotate=True,show=show,savepath=savepath)
 
 
