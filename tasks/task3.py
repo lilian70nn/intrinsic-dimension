@@ -1,6 +1,7 @@
 import random
 from functools import partial
 import argparse
+import os
 
 import torch
 import numpy as np
@@ -18,6 +19,10 @@ import torchvision.models as models
 from src.id.estimator import twonn_id,mle_id
 from src.depths import getDepths
 from src.id.compute import compute_id_dynamics_across_models
+from src.plots import title_to_filename
+
+nltk.download('wordnet')
+nltk.download('omw-1.4')
 
 
 
@@ -61,6 +66,7 @@ def task3_1(model=None, tokenizer=None, num_data=250, run=10, device=None):
     if model is None:
         model = RobertaModel.from_pretrained('roberta-base',output_hidden_states=True).to(device)
     model.eval()
+    os.makedirs("figures/task3", exist_ok=True)
 
     # --- CNN News Dataset ---
 
@@ -86,9 +92,15 @@ def task3_1(model=None, tokenizer=None, num_data=250, run=10, device=None):
 
     plt.xlabel("Layer")
     plt.ylabel("ID Score")
-    plt.title("Intrinsic Dimensionality of Cnn News across Layers")
+    title = "Intrinsic Dimensionality of Cnn News across Layers"
+    plt.title(title)
     plt.legend()
+
+    plt.savefig(f"figures/task3/{title_to_filename(title)}",
+            dpi=300, bbox_inches="tight")
     plt.show()
+
+
 
     # --- TweetEval Dataset ---
     configs = ["emoji", "emotion", "hate", "irony", "offensive", "sentiment"]
@@ -120,9 +132,15 @@ def task3_1(model=None, tokenizer=None, num_data=250, run=10, device=None):
 
     plt.xlabel("Layer")
     plt.ylabel("ID Score")
-    plt.title("Intrinsic Dimensionality of Tweets across Layers")
+    title = "Intrinsic Dimensionality of Tweets across Layers"
+    plt.title(title)
     plt.legend()
+
+    plt.savefig(f"figures/task3/{title_to_filename(title)}",
+            dpi=300, bbox_inches="tight")
     plt.show()
+
+
 
 
 # --- Synthetic Data Generation ---
@@ -172,7 +190,7 @@ def task3_2_1(num_samples=2000, true_ids=None, device=None):
     Study how ID estimates change with increasing true intrinsic dimension
     using GAN-based restricted latent subspace sampling.
     """
-
+    os.makedirs("figures/task3", exist_ok=True)
     if device is None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -190,7 +208,10 @@ def task3_2_1(num_samples=2000, true_ids=None, device=None):
     plt.scatter(true_ids,estimate_ids)
     plt.xlabel("True ID")
     plt.ylabel("Estimated ID")
-    plt.title("TwoNN ID estimation")
+    title = "Latent Dimension vs. Estimated Intrinsic Dimension (TwoNN)"
+    plt.title(title)
+    plt.savefig(f"figures/task3/{title_to_filename(title)}",
+            dpi=300, bbox_inches="tight")
     plt.show()
     
     spearman_corr, p_s = spearmanr(true_ids, estimate_ids)
@@ -209,8 +230,9 @@ def task3_2_2(device=None):
 
     if device is None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
+    os.makedirs("figures/task3", exist_ok=True)
     # --- ID Estimates vs. Sample Size (Linear Sampling) ---
+
     sample_sizes = [i for i in range(200,20000,200)]
     estimate_ids_2nn = []
     estimate_ids_mle = []
@@ -222,8 +244,11 @@ def task3_2_2(device=None):
     plt.plot(sample_sizes,estimate_ids_mle,color='red',label="MLE")
     plt.xlabel("Sample size")
     plt.ylabel("Estimated ID")
-    plt.title("ID Estimates vs. Sample Size (Linear Sampling)")
+    title = "ID Estimates vs. Sample Size (Linear Sampling)"
+    plt.title(title)
     plt.legend()
+    plt.savefig(f"figures/task3/{title_to_filename(title)}",
+            dpi=300, bbox_inches="tight")
     plt.show()
 
     # --- ID Estimates vs. Sample Size (Restricted GAN Latent Sampling) ---
@@ -244,8 +269,11 @@ def task3_2_2(device=None):
     plt.plot(sample_sizes,estimate_ids_mle,color='red',label="MLE")
     plt.xlabel("Sample size")
     plt.ylabel("Estimated ID")
-    plt.title("ID Estimates vs. Sample Size (Restricted GAN Latent Sampling)")
+    title = "ID Estimates vs. Sample Size (Restricted GAN Latent Sampling)"
+    plt.title(title)
     plt.legend()
+    plt.savefig(f"figures/task3/{title_to_filename(title)}",
+            dpi=300, bbox_inches="tight")
     plt.show()
 
 
@@ -260,7 +288,7 @@ def task3_2_3(R=20,d=16,p=5000,noise_dim=2000,sigma=1.0,device=None):
 
     if device is None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
+    os.makedirs("figures/task3", exist_ok=True)
     # --- 1. Generate Data for Two Regimes ---
 
     # Regime 1: p >> n (The "High-Dim, Low-Sample" case)
@@ -283,8 +311,11 @@ def task3_2_3(R=20,d=16,p=5000,noise_dim=2000,sigma=1.0,device=None):
 
     plt.boxplot(data, labels=labels, patch_artist=True)
     plt.ylabel("Estimated ID")
-    plt.title("Comparison of ID estimates with two measurements")
+    title = "Robustness of ID Estimation across High-Dimensional and Large-Sample Regimes"
+    plt.title(title)
     plt.grid(True, linestyle="--", alpha=0.6)
+    plt.savefig(f"figures/task3/{title_to_filename(title)}",
+            dpi=300, bbox_inches="tight")
     plt.show()
 
     # --- 3. Statistical Quantification ---
@@ -327,6 +358,7 @@ def task3_2_4(data_size=3000, d=16, R=8,device=None):
 
     if device is None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    os.makedirs("figures/task3", exist_ok=True)
 
     # --- 1. Data Generation & Preprocessing ---
     z = sample_restricted_z(num_samples=data_size, d=d)
@@ -374,8 +406,11 @@ def task3_2_4(data_size=3000, d=16, R=8,device=None):
     plt.plot(rel,np.array(id_mle).mean(axis=0), color='C3', marker='o', label="MLE")
     plt.xlabel("Layer depth")
     plt.ylabel("Estimated ID")
-    plt.title("estimates change with increasing layer depth")
+    title = "ID estimates across layers"
+    plt.title(title)
     plt.legend()
+    plt.savefig(f"figures/task3/{title_to_filename(title)}",
+            dpi=300, bbox_inches="tight")
     plt.show()
 
 
@@ -390,8 +425,11 @@ def task3_2_4(data_size=3000, d=16, R=8,device=None):
     plt.plot(rel, np.array(id_2nn).mean(axis=0), color="C0", linewidth=2, label="2NN mean")
     plt.xlabel("Layer depth (relative)")
     plt.ylabel("Estimated ID")
-    plt.title("2NN estimated ID across layers")
+    title = "2NN estimates ID across layers"
+    plt.title(title)
     plt.legend()
+    plt.savefig(f"figures/task3/{title_to_filename(title)}",
+            dpi=300, bbox_inches="tight")
     plt.show()
 
 
@@ -407,7 +445,10 @@ def task3_2_4(data_size=3000, d=16, R=8,device=None):
     plt.plot(rel, np.array(id_mle).mean(axis=0), color="C3", linewidth=2, label="MLE mean")
     plt.xlabel("Layer depth (relative)")
     plt.ylabel("Estimated ID")
-    plt.title("MLE estimated ID across layers")
+    title = "MLE estimates ID across layers"
+    plt.title(title)
+    plt.savefig(f"figures/task3/{title_to_filename(title)}",
+            dpi=300, bbox_inches="tight")
     plt.show()
 
 
