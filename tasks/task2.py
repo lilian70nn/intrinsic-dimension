@@ -383,7 +383,7 @@ def main():
     p.add_argument("--epochs", type=int, default=15)
     p.add_argument("--id_logging_interval", type=int, default=15)
     p.add_argument("--k", type=int, default=10)
-    p.add_argument("--y_lim", type=int, default=30)
+    p.add_argument("--y_lim", type=int, default=50)
 
     args = p.parse_args()
 
