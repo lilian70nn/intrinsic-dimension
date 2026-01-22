@@ -248,6 +248,13 @@ def main():
 
     parser.add_argument("--savepath", type=str, default=None,
                         help="Directory to save figures")
+    
+    parser.add_argument("--epochs", type=int, default=20,
+                    help="(Task 1.2) Number of training epochs")
+    parser.add_argument("--num_samples", type=int, default=500,
+                        help="(Task 1.2) Size of the test subset used for ID computation")
+    parser.add_argument("--id_logging_interval", type=int, default=45,
+                        help="(Task 1.2) Log ID every N mini-batches")
 
     args = parser.parse_args()
 
@@ -269,9 +276,12 @@ def main():
     if run_2:
         print(">>> Running Task 1.2")
         task1_2_fig5c_fig9_training_dynamics(
-            show=args.show,
-            savepath=args.savepath
-        )
+        show=args.show,
+        savepath=args.savepath,
+        epochs=args.epochs,
+        num_samples=args.num_samples,
+        id_logging_interval=args.id_logging_interval,
+    )
 
 
 if __name__ == "__main__":
