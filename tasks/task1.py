@@ -79,8 +79,8 @@ def task1_1_fig3b_pretrained_cnn_id(show=True,savepath=None,device=None):
 
 
     # --- ImageNet data source and selected categories  ---
-    #src_dir = "/content/drive/MyDrive/imagenet_training_single_objs"
-    src_dir = "data/imagenet_training_single_objs"
+    src_dir = "/content/drive/MyDrive/imagenet_training_single_objs"
+    #src_dir = "data/imagenet_training_single_objs"
     file_names = ["n01882714/0","n02086240/0","n02087394/0","n02094433/0","n02100583/0","n02100735/0","n02279972/0"]
 
 
