@@ -15,6 +15,7 @@ from scipy.stats import spearmanr
 from pytorch_pretrained_biggan import (BigGAN, one_hot_from_names, truncated_noise_sample)
 from scipy.stats import ttest_ind
 import torchvision.models as models
+import nltk
 
 from src.id.estimator import twonn_id,mle_id
 from src.depths import getDepths
