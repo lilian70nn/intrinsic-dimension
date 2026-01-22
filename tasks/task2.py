@@ -194,7 +194,7 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
 
 def report_id_statistics(model, estimator, train_loader, test_loader, data_name,
                          depth_fns, epochs, optimizer, criterion, id_logging_interval,
-                         device, epoch_scheduler=None, batch_scheduler=None,y_lim=30,
+                         device, epoch_scheduler=None, batch_scheduler=None,y_lim=50,
                          show=True,savepath=None):
 
     (model_name, net), = model.items()
@@ -266,6 +266,7 @@ def report_id_statistics(model, estimator, train_loader, test_loader, data_name,
 
 
 
+
 MODELS = {
     "RealMLP": lambda n_num, cat_card, num_classes: RealMLP_TD(n_num, cat_card, num_classes=num_classes),
     "StandardMLP": lambda n_num, cat_card, num_classes: StandardMLP(n_num, cat_card, num_classes=num_classes),
@@ -280,7 +281,7 @@ depth_fns = {"RealMLP":getDepths_RealMLP_TD,
              }
 
 
-def evaluate_model_on_data(data_id, model_name, num_classes, num_train=2000, num_test=2000,
+def evaluate_model_on_data(data_id, model_name, num_classes, opt_lr, opt_wd,num_train=20000, num_test=2000,
                            epochs=15, id_logging_interval=15, estimator=None,
                            depth_fns=depth_fns, device=None, criterion=None,
                            y_lim=50,k=10, savepath=None, show=True):
@@ -311,10 +312,10 @@ def evaluate_model_on_data(data_id, model_name, num_classes, num_train=2000, num
         criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(
         net.parameters(),
-        lr=1e-2,
+        lr=opt_lr,
         betas=(0.9, 0.95),
         eps=1e-8,
-        weight_decay=1e-2,
+        weight_decay=opt_wd,
     )
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps)
@@ -336,7 +337,6 @@ def evaluate_model_on_data(data_id, model_name, num_classes, num_train=2000, num
         show=show,
         savepath=savepath
     )
-
 
 
 
@@ -374,6 +374,8 @@ def main():
                          "Must match the dataset label space."
                          )
     )
+    p.add_argument("--opt_lr", type=float, default=1e-2, help="Adam learning rate.")
+    p.add_argument("--opt_wd", type=float, default=1e-2, help="Adam weight decay.")
     p.add_argument("--num_train", type=int, default=20000)
     p.add_argument("--num_test", type=int, default=2000)
     p.add_argument("--epochs", type=int, default=15)
@@ -406,6 +408,8 @@ def main():
             data_id=args.data_id,
             model_name=args.model,
             num_classes=args.num_classes,
+            opt_lr=args.opt_lr,
+            opt_wd=args.opt_wd,
             num_train=args.num_train,
             num_test=args.num_test,
             epochs=args.epochs,
