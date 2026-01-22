@@ -281,7 +281,7 @@ depth_fns = {"RealMLP":getDepths_RealMLP_TD,
              }
 
 
-def evaluate_model_on_data(data_name, model_name, num_classes, num_train=2000, num_test=2000,
+def evaluate_model_on_data(data_id, model_name, num_classes, num_train=2000, num_test=2000,
                            epochs=15, id_logging_interval=15, estimator=None,
                            depth_fns=depth_fns, device=None, criterion=None,
                            y_lim=30,k=10, savepath=None, show=True):
@@ -290,7 +290,8 @@ def evaluate_model_on_data(data_name, model_name, num_classes, num_train=2000, n
     if estimator is None:
         estimator = {"TwoNN": partial(twonn_id, device=device, batch=512)}
 
-    data = fetch_openml(data_id=DATASETS[data_name], as_frame=True)
+    data = fetch_openml(data_id=data_id, as_frame=True)
+    data_name = data.details.get("name", f"openml_{data_id}")
     train_loader, test_loader, num_numerical, cardinality = make_dataloaders(data, num_train, num_test, seed=42)
     if model_name == "RealMLP":
         model = {model_name: MODELS[model_name](num_numerical, cardinality, num_classes)}
@@ -301,6 +302,8 @@ def evaluate_model_on_data(data_name, model_name, num_classes, num_train=2000, n
         model[model_name].fit_statistics(train_loader.dataset.tensors[0])
     elif model_name == "TabM":
         model = {model_name: MODELS[model_name](num_numerical, cardinality, k, num_classes)}
+    else:
+        raise ValueError(f"Unknown model_name: {model_name}. Choose from {list(MODELS.keys())}")
 
     total_steps = epochs * len(train_loader)
     (model_name, net), = model.items()
@@ -358,9 +361,20 @@ def main():
                    help="Force device. Default: auto-detect.")
 
     # params for eval pipeline
-    p.add_argument("--dataset", choices=list(DATASETS.keys()), default="adult")
+    p.add_argument(
+        "--data_id",
+        type=int,
+        default=1590,
+        help="OpenML dataset id (default: 1590=adult). Examples: 1590 (adult), 45551 (higgs), 150 (covertype)."
+    )
     p.add_argument("--model", choices=list(MODELS.keys()), default="RealMLP")
-    p.add_argument("--num_classes", type=int, default=2)
+    p.add_argument("--num_classes", type=int, default=2,
+                   help=(
+                       "Number of classes for classification. "
+                         "Examples: adult=2, higgs=2, covertype=7. "
+                         "Must match the dataset label space."
+                         )
+    )
     p.add_argument("--num_train", type=int, default=20000)
     p.add_argument("--num_test", type=int, default=2000)
     p.add_argument("--epochs", type=int, default=15)
@@ -390,7 +404,7 @@ def main():
 
     if args.eval:
         evaluate_model_on_data(
-            data_name=args.dataset,
+            data_id=args.data_id,
             model_name=args.model,
             num_classes=args.num_classes,
             num_train=args.num_train,
