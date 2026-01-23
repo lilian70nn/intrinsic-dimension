@@ -189,10 +189,7 @@ class PBLDNumEmbed(nn.Module):
 
 class RealMLP_TD(nn.Module):
     """
-    RealMLP-TD: a tabular MLP with structured preprocessing and embeddings.
-
-    This model follows a RealMLP-style pipeline with explicit preprocessing stages
-    and learnable embeddings for tabular data.
+    RealMLP-TD: a tabular MLP with structured preprocessing and learnable embeddings.
 
     Pipeline overview:
 
