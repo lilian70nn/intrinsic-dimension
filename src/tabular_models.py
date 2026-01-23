@@ -37,7 +37,7 @@ class StandardMLP(nn.Module):
 
 
     def __init__(self, num_numerical, cat_cardinalities,
-                 dropout=0.5, hidden_dim=256, num_classes=2):
+                 dropout=0.5, hidden_dim=256, num_classes=None):
 
 
         '''
@@ -65,6 +65,8 @@ class StandardMLP(nn.Module):
         self.capture_input = Capture()
         self.capture_after_preprocess = Capture()
 
+        out_dim = 1 if num_classes is None else num_classes
+
         # --- MLP Core Structure ---
         self.mlp = nn.Sequential(
             nn.Linear(total_input_dim, hidden_dim),
@@ -79,7 +81,7 @@ class StandardMLP(nn.Module):
             nn.ReLU(),
             nn.Dropout(dropout),
 
-            nn.Linear(hidden_dim, num_classes)
+            nn.Linear(hidden_dim, out_dim)
         )
 
     def fit_statistics(self, x_num):
@@ -104,7 +106,10 @@ class StandardMLP(nn.Module):
         if x_cat is not None:
             for i, card in enumerate(self.cat_cardinalities):
                 col = x_cat[:, i]
-                oh = F.one_hot(col, num_classes=card).float()
+                mask = col >= 0
+                safe = col.clamp(min=0)
+                oh = F.one_hot(safe, num_classes=card).float()
+                oh[~mask] = 0.0
                 parts.append(oh)
 
         return torch.cat(parts, dim=1)
@@ -145,47 +150,101 @@ class LearnableScaling(nn.Module):
 
 
 class PBLDNumEmbed(nn.Module):
+
     """
-    Minimal PBLD-style numerical embedding:
-      phi(x) = [cos(2π w x + b), sin(2π w x + b)]
-      h1 = Linear(phi)
-      h2 = Linear([phi, h1])   # Dense concat
-      out = Linear([phi, h1, h2]) -> d_embedding
-    Returns (B, n_features * d_embedding)
+    For each numerical feature x_i, this module produces a 4-dimensional embedding
+    Numerical embedding (PBLD-style), per feature x_i:
+    phi_i(x_i) = cos(2π * w_i * x_i + b_i)         ∈ R^{K}
+    g_i(x_i)   = W2_i * phi_i(x_i) + b2_i          ∈ R^{3}
+    e_i(x_i)   = [x_i, g_i(x_i)]                   ∈ R^{4}
+    All e_i are concatenated to shape (B, n_features*4).
     """
-    def __init__(self, n_features, d_embedding=8, n_freq=16, sigma=0.01):
+
+    def __init__(self, n_features, n_freq=16, sigma=0.01):
         super().__init__()
         self.n_features = n_features
-        self.d_embedding = d_embedding
         self.n_freq = n_freq
 
-        # per-feature frequencies + phase (cos-bias)
+        # per-feature frequencies + phase
         self.w = nn.Parameter(torch.randn(n_features, n_freq) * sigma)
         self.b = nn.Parameter(torch.zeros(n_features, n_freq))
 
-        phi_dim = 2 * n_freq
-        self.lin1 = nn.Linear(phi_dim, phi_dim, bias=True)
-        self.lin2 = nn.Linear(phi_dim + phi_dim, phi_dim, bias=True)
-        self.proj = nn.Linear(phi_dim + phi_dim + phi_dim, d_embedding, bias=True)
+        # per-feature projection to 3 dims
+        self.W2 = nn.Parameter(torch.randn(n_features, 3, n_freq) * sigma)
+        self.b2 = nn.Parameter(torch.zeros(n_features, 3))
+
 
     @property
     def out_dim(self):
-        return self.n_features * self.d_embedding
+        return self.n_features * 4
 
     def forward(self, x):
-        # x: (B, n_features)
+        # x: (B, F)
         x = x.float()
-        ang = 2 * math.pi * x.unsqueeze(-1) * self.w.unsqueeze(0) + self.b.unsqueeze(0)  # (B,F,K)
-        phi = torch.cat([torch.cos(ang), torch.sin(ang)], dim=-1)  # (B,F,2K)
+        ang = 2 * math.pi * x.unsqueeze(-1) * self.w.unsqueeze(0) + self.b.unsqueeze(0)
+        phi = torch.cos(ang)   # (B, F, K)
 
-        B, F, D = phi.shape
-        phi2 = phi.reshape(B * F, D)
+        # linear projection per feature
+        proj = torch.einsum("bfk,fok->bfo", phi, self.W2) + self.b2  # (B,F,3)
 
-        h1 = self.lin1(phi2)
-        h2 = self.lin2(torch.cat([phi2, h1], dim=-1))
-        out = self.proj(torch.cat([phi2, h1, h2], dim=-1))  # (B*F, d_emb)
+        out = torch.cat([x.unsqueeze(-1), proj], dim=-1)  # (B,F,4)
+        return out.reshape(out.size(0), -1)
 
-        return out.reshape(B, F * self.d_embedding)
+
+class NTLinear(nn.Module):
+
+
+    """
+    Neural Tangent Parameterization (NTP) linear layer.
+
+    Forward:
+        y = (1 / sqrt(d_in)) * (W x) + b
+
+    Note on initialization:
+        The RealMLP-TD paper uses a data-dependent initialization for weights (row-wise rescaling
+        based on data statistics) and for biases (he+5 / hull+5).
+        Here we keep the NTP forward parameterization, but use standard PyTorch initialization
+        (Kaiming-uniform weights and uniform biases) for simplicity.
+    """
+
+    def __init__(self, in_features, out_features, bias=True):
+        super().__init__()
+        self.in_features = in_features
+        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+        self.bias = nn.Parameter(torch.empty(out_features)) if bias else None
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            bound = 1 / math.sqrt(self.in_features) if self.in_features > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+    def forward(self, x):
+        y = F.linear(x, self.weight, None) / math.sqrt(self.in_features)
+        if self.bias is not None:
+            y = y + self.bias
+        return y
+
+class ParametricActivation(nn.Module):
+
+
+    def __init__(self, dim, act="selu", init_alpha=1.0):
+        super().__init__()
+        self.alpha = nn.Parameter(torch.full((dim,), init_alpha))
+
+        if act == "selu":
+            self.act = nn.SELU()
+        elif act == "mish":
+            self.act = nn.Mish()
+        else:
+            raise ValueError(f"Unknown activation: {act}")
+
+    def forward(self, x):
+        return (1.0 - self.alpha) * x + self.alpha * self.act(x)
+
+
+
 
 class RealMLP_TD(nn.Module):
     """
@@ -213,7 +272,7 @@ class RealMLP_TD(nn.Module):
         - Element-wise trainable rescaling of the full representation
 
     5. MLP backbone
-        - [Linear → PReLU → Dropout] × 3 → Linear → logits
+        - [Linear → ParametricActivation → Dropout] × 3 → Linear → logits
 
     Instrumentation:
         - Identity-based Capture modules are inserted at key semantic stages
@@ -226,10 +285,9 @@ class RealMLP_TD(nn.Module):
         cat_cardinalities=None,
         max_card=8,
         emb_dim=8,
-        num_emb_dim=8,
         dropout=0.15,
         hidden_dim=256,
-        num_classes=2,
+        num_classes=None,
     ):
         super().__init__()
 
@@ -255,10 +313,15 @@ class RealMLP_TD(nn.Module):
             if card <= max_card:
                 self.cat_processors.append(nn.Identity())
                 self.is_embedding.append(False)
-                low_cat_dim += card
+                if card == 2:
+                    low_cat_dim += 1
+                else:
+                    low_cat_dim += card
             else:
-                emb = nn.Embedding(card, emb_dim)
+                emb = nn.Embedding(card+1, emb_dim, padding_idx=0)
                 nn.init.normal_(emb.weight, std=0.01)
+                with torch.no_grad():
+                    emb.weight[0].zero_()
                 self.cat_processors.append(emb)
                 self.is_embedding.append(True)
                 high_cat_dim += emb_dim
@@ -273,43 +336,67 @@ class RealMLP_TD(nn.Module):
 
         self.num_embedding = PBLDNumEmbed(
             n_features=num_numerical,
-            d_embedding=num_emb_dim,
         )
 
         # final input dim after embeddings
-        total_input_dim = num_numerical * num_emb_dim + low_cat_dim + high_cat_dim
+        total_input_dim = num_numerical * 4 + low_cat_dim + high_cat_dim
 
         # ----- learnable scaling -----
         self.learnable_scaling = LearnableScaling(total_input_dim)
 
+        if num_classes is None:
+            # regression
+            act = "mish"
+        else:
+            # classification
+            act = "selu"
+
+        out_dim = 1 if num_classes is None else num_classes
         # ----- MLP -----
         self.mlp = nn.Sequential(
-            nn.Linear(total_input_dim, hidden_dim),
-            nn.PReLU(),
+            NTLinear(total_input_dim, hidden_dim),
+            ParametricActivation(hidden_dim, act),
             nn.Dropout(dropout),
 
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.PReLU(),
+            NTLinear(hidden_dim, hidden_dim),
+            ParametricActivation(hidden_dim, act),
             nn.Dropout(dropout),
 
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.PReLU(),
+            NTLinear(hidden_dim, hidden_dim),
+            ParametricActivation(hidden_dim, act),
             nn.Dropout(dropout),
 
-            nn.Linear(hidden_dim, num_classes),
+            NTLinear(hidden_dim, out_dim),
         )
 
     # ---------- encoders ----------
-    def _encode_low(self, x_num, x_cat):
+    def _encode_low(self, x_num, x_cat=None):
         outs = [x_num]
         if x_cat is None or len(self.cat_cardinalities) == 0:
             return torch.cat(outs, dim=1)
         for i, proc in enumerate(self.cat_processors):
-            if not self.is_embedding[i]:
-                col = x_cat[:, i]
-                outs.append(F.one_hot(col, num_classes=self.cat_cardinalities[i]).float())
-        return torch.cat(outs, dim=1)
+            K = self.cat_cardinalities[i]
+            if self.is_embedding[i]:
+                continue
 
+            col = x_cat[:, i]
+            if K == 2:
+                # binary -> 1 dim in {-1, +1}, missing -> 0
+                # col==0 -> -1, col==1 -> +1, col==-1 -> 0
+                out = torch.where(col < 0, torch.zeros_like(col), col * 2 - 1).float().unsqueeze(1)
+                outs.append(out)
+            else:
+                mask = col >= 0
+                safe = col.clamp(min=0) 
+                oh = F.one_hot(safe, num_classes=K).float()
+                oh[~mask] = 0.0
+                outs.append(oh)
+        return torch.cat(outs, dim=1)
+    
+
+    # High-card categorical encoding convention:
+    # input indices: -1 for missing, 0..(card-1) for observed categories
+    # embedding uses padding_idx=0 for missing => shift observed categories by +1
     def _encode_high(self, x_cat):
         if x_cat is None or len(self.cat_cardinalities) == 0:
             return None
@@ -318,6 +405,7 @@ class RealMLP_TD(nn.Module):
         for i, proc in enumerate(self.cat_processors):
             if self.is_embedding[i]:
                 col = x_cat[:, i]
+                col = torch.where(col < 0, torch.zeros_like(col), col + 1) 
                 outs.append(proc(col))
         if len(outs) == 0:
             return None
@@ -330,12 +418,20 @@ class RealMLP_TD(nn.Module):
             X = self._encode_low(x_num, x_cat)
             median = torch.quantile(X, 0.5, dim=0, keepdim=True)
 
-            q1 = torch.quantile(X, 0.25, dim=0)
-            q3 = torch.quantile(X, 0.75, dim=0)
-            iqr = q3 - q1
-            iqr[iqr == 0] = 1.0
+            q25 = torch.quantile(X, 0.25, dim=0)
+            q75 = torch.quantile(X, 0.75, dim=0)
+            iqr = q75 - q25
 
-            scale = 1.0 / iqr
+            q0 = torch.quantile(X, 0.0, dim=0)
+            q1 = torch.quantile(X, 1.0, dim=0)
+            rng = q1 - q0
+            
+            scale = torch.zeros_like(iqr)
+            mask_iqr = iqr != 0
+            scale[mask_iqr] = 1.0 / iqr[mask_iqr]
+
+            mask_rng = (~mask_iqr) & (rng != 0)
+            scale[mask_rng] = 2.0 / rng[mask_rng]
 
             self.median.copy_(median)
             self.scale.copy_(scale.unsqueeze(0))
@@ -344,13 +440,10 @@ class RealMLP_TD(nn.Module):
         self.train()
         print("RealMLP statistics fitted.")
 
-    def forward(self, x_num, x_cat=None):
+    def _forward_to_mlp_input(self, x_num, x_cat=None):
+
         if not self.fitted:
             raise RuntimeError("Call fit_statistics(x_num, x_cat) before forward().")
-
-        if isinstance(x_num, (tuple, list)):
-            x_cat = x_num[1]
-            x_num = x_num[0]
 
         # collect raw high-card indices for later capture points
         raw_high_cat = None
@@ -399,25 +492,36 @@ class RealMLP_TD(nn.Module):
         # capture: after scaling
         _ = self.capture_after_scale(x)
 
+        return x
+
+
+
+    def forward(self, x_num, x_cat=None):
+
+        if isinstance(x_num, (tuple, list)):
+            x_cat = x_num[1]
+            x_num = x_num[0]
+        x = self._forward_to_mlp_input(x_num, x_cat)
         return self.mlp(x)
 
 
 class TabM(nn.Module):
 
     """
-    Initializes the TabM model, which uses the BatchEnsemble technique to run 'k' independent
-    sub-networks simultaneously using parameter sharing.
+    Initializes the TabM model, which uses the BatchEnsemble technique to run k 
+    ensemble members simultaneously via shared weights and per-member (R,S,B) adapters..
 
     Preprocessing Pipeline:
         1. Feature Encoding: Numerical features are used directly; Categorical features are mapped via Embeddings.
         2. Concatenation: Joins numerical features with all categorical Embeddings to form the backbone input.
     Main Backbone Network:
-        Architecture: [LinearBatchEnsemble -> ReLU -> Dropout] x n_blocks -> LinearEnsemble -> Logits
+        Architecture: 
+        [LinearBatchEnsemble -> ReLU -> Dropout] x n_blocks -> LinearEnsemble -> Logits((B, k, C))
 
         Architecture Note:
-            The EnsembleView layer expands the input to (Batch, k, D), the first BatchEnsemble block uses
-            random-sign scaling initialization, while subsequent blocks are initialized as identity (ones),
-            following the TabM initialization scheme.
+            The EnsembleView layer expands the input to (Batch, k, D), In the first BatchEnsemble layer, 
+            only the input scaling R is initialized with random signs; S is set to ones. All subsequent layers 
+            initialize R and S to ones, bias B is zero-initialized.
 
             Capture (identity) modules are inserted as hook anchors for representation analysis.
     """
@@ -428,7 +532,8 @@ class TabM(nn.Module):
 
         """
         Args:
-            k (int): The number of ensemble members (Ensemble Size).
+            k (int): The number of ensemble members (Ensemble Size). 
+                    Paper uses k=32; we use a smaller k for ID measurements
             d_block (int): Dimensionality of each MLP block.
             n_blocks (int): The number of MLP blocks.
             num_classes (int): The number of output classes.
@@ -452,18 +557,25 @@ class TabM(nn.Module):
         # --- 1. Ensemble View Layer (Core) ---
         layers.append(tabm.EnsembleView(k=k))
         # --- 2. TabM Blocks ---
-        # initialize all multiplicative adapters R and S, except for the very first one, deterministically with 1
+        # initialize all multiplicative adapters R and S, except for the very first R, deterministically with 1
         for i in range(n_blocks):
             current_in = backbone_input_dim if i == 0 else d_block
-            scaling_init = 'random-signs' if i == 0 else 'ones'
+            scaling_init = ('random-signs', 'ones') if i == 0 else ('ones', 'ones')
+
+            be_layer = tabm.LinearBatchEnsemble(
+                in_features=current_in,
+                out_features=d_block,
+                k=k,
+                bias=True,
+                scaling_init=scaling_init,
+            )
+            # B = 0
+            if be_layer.bias is not None:
+                with torch.no_grad():
+                    be_layer.bias.zero_()
 
             layers.extend([
-                tabm.LinearBatchEnsemble(
-                    in_features=current_in,
-                    out_features=d_block,
-                    k=k,
-                    scaling_init=scaling_init
-                ),
+                be_layer,
                 nn.ReLU(),
                 nn.Dropout(dropout),
             ])
