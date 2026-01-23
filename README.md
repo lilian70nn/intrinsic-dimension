@@ -1,4 +1,4 @@
-# Intrinsic Dimension Dynamics in Neural Networks
+# Intrinsic Dimension Analysis in Neural Networks
 
 This repository contains code for reproducing and analyzing the dynamics of intrinsic dimension in various neural network architectures, including convolutional neural networks (CNNs), tabular models, and transformer-based language models.
 
