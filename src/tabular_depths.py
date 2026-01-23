@@ -1,4 +1,5 @@
 import numpy as np
+from src.tabular_models import NTLinear
 import torch.nn as nn
 
 def getDepths_RealMLP_TD(model):
@@ -20,7 +21,7 @@ def getDepths_RealMLP_TD(model):
         depths.append(i)
 
     # ---- MLP linear layers (4 linears) ----
-    linear_layers = [layer for layer in model.mlp if isinstance(layer, nn.Linear)]
+    linear_layers = [layer for layer in model.mlp if isinstance(layer, NTLinear)]
     for j, layer in enumerate(linear_layers):
         modules.append(layer)
         names.append("out" if j == len(linear_layers) - 1 else f"fc{j+1}")
