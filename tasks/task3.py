@@ -23,8 +23,7 @@ from src.depths import getDepths
 from src.id.compute import compute_id_dynamics_across_models
 from src.plots import title_to_filename
 
-nltk.download('wordnet')
-nltk.download('omw-1.4')
+
 
 
 
@@ -350,6 +349,9 @@ def task3_2_3(R=20,d=16,p=5000,noise_dim=2000,sigma=1.0,device=None):
 
 
 def task3_2_4(data_size=3000, d=16, R=8,device=None):
+
+    nltk.download('wordnet')
+    nltk.download('omw-1.4')
 
     """
     Task – Layer-wise analysis:
