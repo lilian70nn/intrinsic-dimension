@@ -23,8 +23,6 @@ from src.depths import getDepths
 from src.id.compute import compute_id_dynamics_across_models
 from src.plots import title_to_filename
 
-nltk.download('wordnet')
-nltk.download('omw-1.4')
 
 
 
