@@ -63,7 +63,7 @@ python tasks/task1.py
 # Task 2: Tabular model intrinsic dimension analysis
 python tasks/task2.py
 
-# Task 3: NLP model intrinsic dimension analysis
+# Task 3: NLP model intrinsic dimension analysis, synthetic data experiments
 python tasks/task3.py
 ```
 
