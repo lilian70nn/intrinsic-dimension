@@ -28,7 +28,7 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
     adult = fetch_openml(data_id=1590, as_frame=True)
     adult_train,adult_test, adult_num_numerical, adult_cardinality = make_dataloaders(adult,num_train,num_test,seed=42)
     
-    RealMLP_adult={"RealMLP":RealMLP_TD(adult_num_numerical,adult_cardinality)}
+    RealMLP_adult={"RealMLP":RealMLP_TD(adult_num_numerical,adult_cardinality,num_classes=2)}
     RealMLP_adult["RealMLP"].fit_statistics(adult_train.dataset.tensors[0],
                                 adult_train.dataset.tensors[1])
 
