@@ -385,7 +385,7 @@ def main():
 
     args = p.parse_args()
 
-    # default behavior: if nothing chosen, run eval on default dataset/model
+    # default behavior: if nothing chosen, run both on default dataset/model
     if not args.adult_full and not args.eval:
         args.adult_full = True
         args.eval = True
