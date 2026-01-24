@@ -14,6 +14,15 @@ def get_pca_dim(x, th):
         return indices[0][0].item()
     else:
         return 0
+    
+def to_device(x, device):
+    if torch.is_tensor(x):
+        return x.to(device)
+    if isinstance(x, (tuple, list)):
+        return type(x)(to_device(v, device) for v in x)
+    if isinstance(x, dict):
+        return {k: to_device(v, device) for k, v in x.items()}
+    return x
 
 
 def compute_id_dynamics_across_models(models, estimators, dataloader, depth_fns,
@@ -21,6 +30,9 @@ def compute_id_dynamics_across_models(models, estimators, dataloader, depth_fns,
                                       only_last_hidden_layer=False,
                                       show_progress=True,
                                       ):
+    
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if show_progress:
         iterator = tqdm(models.items(), desc="Models")
@@ -81,12 +93,10 @@ def compute_id_dynamics_across_models(models, estimators, dataloader, depth_fns,
         activations_input = []
         with torch.no_grad():
             for k, batch in enumerate(dataloader, 0):
-                if len(batch) == 3:
-                    x_num, x_cat, y = batch
-                    inputs = (x_num.to(device), x_cat.to(device))
-                else:
-                    x, y = batch
-                    inputs = x.to(device)
+
+                inputs, _ = batch
+                inputs = to_device(inputs, device)
+
                 if has_input and not only_last_hidden_layer:
                     activations_input.append(inputs.reshape(inputs.shape[0], -1).detach().cpu())
 
@@ -128,3 +138,5 @@ def compute_id_dynamics_across_models(models, estimators, dataloader, depth_fns,
         torch.cuda.empty_cache()
 
     return id_all_model
+
+
