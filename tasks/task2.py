@@ -6,11 +6,12 @@ from sklearn.datasets import fetch_openml
 
 from src.id.estimator import twonn_id
 from src.id.compute import compute_id_dynamics_across_models
-from src.train_and_test import train_and_compute_id
+from src.train_and_test_old import train_and_compute_id
 from src.plots import plot_fig3b, plot_fig5c, plot_fig9A, plot_fig9B, plot_fig9C
-from src.tabular_preprocessing import make_dataloaders
+from src.tabular_preprocessing_old import make_dataloaders
 from src.tabular_depths import getDepths_RealMLP_TD, getDepths_StandardMLP, getDepths_TabM
 from src.tabular_models import RealMLP_TD, StandardMLP, TabM
+from src.train_and_test import ce_ensemble_sum, accuracy_ensemble_sum, accuracy_sum
 
 import argparse
 from pathlib import Path
@@ -32,7 +33,7 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
     RealMLP_adult["RealMLP"].fit_statistics(adult_train.dataset.tensors[0],
                                 adult_train.dataset.tensors[1])
 
-    StandardMLP_adult={"StandardMLP":StandardMLP(adult_num_numerical,adult_cardinality)}
+    StandardMLP_adult={"StandardMLP":StandardMLP(adult_num_numerical,adult_cardinality,num_classes=2)}
     StandardMLP_adult["StandardMLP"].fit_statistics(adult_train.dataset.tensors[0])
 
     depth_fns = {
@@ -44,7 +45,7 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
     estimator = {"TwoNN": partial(twonn_id,device=device,batch=512)}
             
     criterion = nn.CrossEntropyLoss()
-
+    metrics = accuracy_sum
 
     # --- ID Measurement of Untrained Models--
     id_dynamics_realmlp_untrained = compute_id_dynamics_across_models(
@@ -77,10 +78,10 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
     total_steps = epochs * len(adult_train)
     optimizer = torch.optim.Adam(
         net.parameters(),
-        lr=1e-2,
+        lr=1e-3,
         betas=(0.9, 0.95),
         eps=1e-8,
-        weight_decay=1e-2,
+        weight_decay=1e-4,
     )
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps)
 
@@ -92,6 +93,7 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
             adult_test,
             estimator,
             criterion,
+            metrics,
             optimizer,
             id_logging_interval,
             device=device,
@@ -138,6 +140,7 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
             adult_test,
             estimator,
             criterion,
+            metrics,
             optimizer,
             id_logging_interval,
             device=device,
@@ -193,7 +196,7 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
 
 
 def report_id_statistics(model, estimator, train_loader, test_loader, data_name,
-                         depth_fns, epochs, optimizer, criterion, id_logging_interval,
+                         depth_fns, epochs, optimizer, criterion, metrics, id_logging_interval,
                          device, epoch_scheduler=None, batch_scheduler=None,y_lim=50,
                          show=True,savepath=None):
 
@@ -218,6 +221,7 @@ def report_id_statistics(model, estimator, train_loader, test_loader, data_name,
             test_loader,
             estimator,
             criterion,
+            metrics,
             optimizer,
             id_logging_interval,
             device=device,
@@ -283,7 +287,7 @@ depth_fns = {"RealMLP":getDepths_RealMLP_TD,
 
 def evaluate_model_on_data(data_id, model_name, num_classes, opt_lr, opt_wd,num_train=20000, num_test=2000,
                            epochs=15, id_logging_interval=15, estimator=None,
-                           depth_fns=depth_fns, device=None, criterion=None,
+                           depth_fns=depth_fns, device=None, criterion=None, metrics=None,
                            y_lim=50,k=10, savepath=None, show=True):
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -309,7 +313,16 @@ def evaluate_model_on_data(data_id, model_name, num_classes, opt_lr, opt_wd,num_
     (model_name, net), = model.items()
     
     if criterion is None:
-        criterion = nn.CrossEntropyLoss()
+        if model_name == "TabM":
+            criterion = ce_ensemble_sum
+        else:
+            criterion = nn.CrossEntropyLoss()
+    if metrics is None:
+        if model_name == "TabM":
+            metrics = accuracy_ensemble_sum
+        else:
+            metrics = accuracy_sum
+    
     optimizer = torch.optim.Adam(
         net.parameters(),
         lr=opt_lr,
@@ -330,6 +343,7 @@ def evaluate_model_on_data(data_id, model_name, num_classes, opt_lr, opt_wd,num_
         epochs,
         optimizer,
         criterion,
+        metrics,
         id_logging_interval,
         device,
         batch_scheduler=scheduler,
