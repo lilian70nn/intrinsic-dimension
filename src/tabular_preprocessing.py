@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 from src.datasets import TabularPairDataset
+from torch.utils.data import DataLoader
 
 class TabularEncoder:
     def __init__(self):
