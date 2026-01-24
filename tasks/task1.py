@@ -183,8 +183,8 @@ def task1_2_fig5c_fig9_training_dynamics(show=True,
     depth_fns = {"resnet18": getDepths_cifar_resnet,
                 "vgg16":getDepths,
                 "AlexNet":getDepths}
-
-    criterion = nn.CrossEntropyLoss()
+    estimator = {"TwoNN":partial(twonn_id,device=device,batch=256)}
+    criterion = torch.nn.CrossEntropyLoss(reduction="sum")
     metrics = accuracy_sum
 
     for model_name, net in models_to_run:
@@ -192,7 +192,6 @@ def task1_2_fig5c_fig9_training_dynamics(show=True,
         print(f"\n===== Running model: {model_name} =====")
 
         model = {model_name: net}
-        estimator = {"TwoNN":partial(twonn_id,device=device,batch=256)}
         optimizer = optim.SGD(
             net.parameters(), lr=0.05, momentum=0.9, weight_decay=5e-4
         )
