@@ -20,8 +20,9 @@ from src.id.estimator import twonn_id, mle_id, repeat_compute
 from src.postprocess import merged_over_categories
 from src.datasets import PathListDataset
 from src.id.compute import compute_id_dynamics_across_models
-from src.train_and_test import train_and_compute_id
+from src.train_and_test_old import train_and_compute_id
 from src.plots import plot_fig3b, plot_fig5c, plot_fig9A, plot_fig9B, plot_fig9C
+from src.train_and_test import accuracy_sum
 
 
 def task1_1_fig3b_pretrained_cnn_id(show=True,savepath=None,device=None):
@@ -68,6 +69,7 @@ def task1_1_fig3b_pretrained_cnn_id(show=True,savepath=None,device=None):
     estimators = {"TwoNN":partial(repeat_compute,estimator=partial(twonn_id,device=device,batch=256)),
                 "MLE":partial(repeat_compute,estimator=partial(mle_id,device=device,batch=256))
                 }
+    
 
 
     # --- input preprocessing ---
@@ -182,6 +184,8 @@ def task1_2_fig5c_fig9_training_dynamics(show=True,
                 "vgg16":getDepths,
                 "AlexNet":getDepths}
 
+    criterion = nn.CrossEntropyLoss()
+    metrics = accuracy_sum
 
     for model_name, net in models_to_run:
 
@@ -189,7 +193,6 @@ def task1_2_fig5c_fig9_training_dynamics(show=True,
 
         model = {model_name: net}
         estimator = {"TwoNN":partial(twonn_id,device=device,batch=256)}
-        criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(
             net.parameters(), lr=0.05, momentum=0.9, weight_decay=5e-4
         )
@@ -204,6 +207,7 @@ def task1_2_fig5c_fig9_training_dynamics(show=True,
                 small_test_loader,
                 estimator,
                 criterion,
+                metrics,
                 optimizer,
                 id_logging_interval,
                 device,
