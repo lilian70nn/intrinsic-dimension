@@ -51,7 +51,8 @@ def compute_id_dynamics_across_models(models, estimators, dataloader, depth_fns,
         id_all_model[model_name] = {}
         id_all_model[model_name]['depths'] = depths
         id_all_model[model_name]['depth_names'] = names
-
+        # If the first entry is the special "input" marker, we treat the model input
+        # itself as a layer and collect its activations manually (no forward hook).
         has_input = (len(modules) > 0 and isinstance(modules[0], str) and modules[0] == "input")
 
         if has_input:
