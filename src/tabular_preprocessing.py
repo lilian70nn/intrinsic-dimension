@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import torch
+from src.datasets import TabularPairDataset
 
 class TabularEncoder:
     def __init__(self):
@@ -102,8 +103,8 @@ def make_dataloaders(data, num_train, num_test, seed):
     y_train = torch.tensor(y_all[train_idx], dtype=torch.long)
     y_test  = torch.tensor(y_all[test_idx], dtype=torch.long)
 
-    train_ds = TensorDataset(X_train_num, X_train_cat, y_train)
-    test_ds  = TensorDataset(X_test_num, X_test_cat, y_test)
+    train_ds = TabularPairDataset(X_train_num, X_train_cat, y_train)
+    test_ds  = TabularPairDataset(X_test_num, X_test_cat, y_test)
 
     train_loader = DataLoader(train_ds, batch_size=256, shuffle=True, num_workers=2)
     test_loader  = DataLoader(test_ds, batch_size=128, shuffle=False)
