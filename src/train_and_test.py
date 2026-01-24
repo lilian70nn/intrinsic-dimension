@@ -1,7 +1,8 @@
 import copy
 import torch
 from tqdm import tqdm
-from src.id.compute import compute_id_dynamics_across_models
+from src.id.compute import compute_id_dynamics_across_models, to_device
+
 
 def train(global_batch,
           model_dict,
@@ -46,13 +47,9 @@ def train(global_batch,
 
     for batch in train_loader:
         # Handle Tabular (3-item) vs Image (2-item) batches
-        if len(batch) == 3:
-            x_num, x_cat, y = batch
-            x_num, x_cat, y = x_num.to(device), x_cat.to(device), y.to(device)
-            inputs = (x_num, x_cat)
-        else:
-            inputs, y = batch
-            inputs, y = inputs.to(device), y.to(device)
+        inputs, y = batch
+        inputs = to_device(inputs, device)
+        y = y.to(device)
 
         batch_size = y.size(0)
         optimizer.zero_grad()
@@ -113,13 +110,10 @@ def test(model,dataloader,criterion,metrics,device):
 
     with torch.no_grad():
         for batch in dataloader:
-            if len(batch) == 3:
-                x_num, x_cat, y = batch
-                x_num, x_cat, y = x_num.to(device), x_cat.to(device), y.to(device)
-                inputs = (x_num, x_cat)
-            else:
-                inputs, y = batch
-                inputs, y = inputs.to(device), y.to(device)
+            
+            inputs, y = batch
+            inputs = to_device(inputs, device)
+            y = y.to(device)
 
             batch_size = y.size(0)
             outputs = model(inputs)
