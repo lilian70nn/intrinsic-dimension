@@ -1,3 +1,8 @@
+"""
+This section contains helper functions essential for setting up the experiment: 
+defining how model depth is tracked for intrinsic dimension (ID) analysis, 
+"""
+
 import numpy as np
 from src.tabular_models import NTLinear
 import torch.nn as nn

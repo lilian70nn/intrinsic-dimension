@@ -1,3 +1,8 @@
+"""
+This section defines the low-level functions for executing a single training epoch 
+and evaluating model performance.
+"""
+
 import copy
 import torch
 from tqdm import tqdm

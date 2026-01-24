@@ -1,3 +1,8 @@
+"""
+This is the core analysis engine of the experiment. It orchestrates the extraction of hidden representations 
+from deep neural networks and computes their geometric properties (Intrinsic Dimension and PCA-based dimensionality).
+"""
+
 import numpy as np
 import torch
 from sklearn.preprocessing import StandardScaler

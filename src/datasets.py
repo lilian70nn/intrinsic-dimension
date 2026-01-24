@@ -1,3 +1,12 @@
+"""
+Dataset utilities used across image and tabular experiments.
+
+This module defines lightweight Dataset wrappers for:
+- Image datasets specified by explicit file paths
+- Tabular datasets with paired numerical and categorical features
+"""
+
+
 from torch.utils.data import Dataset
 from PIL import Image
 

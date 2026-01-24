@@ -1,3 +1,24 @@
+"""
+This section defines the CNN architectures used throughout the CIFAR-10 experiments (Fig. 5C, and Fig. 9):
+
+- Custom VGG class A VGG-style network following the standard VGG convolutional configuration, 
+but with the classifier replaced by a single Linear(512 → 10) layer.
+
+- AlexNet architecture
+
+CIFAR-10 AlexNet adapted from the original design: all convolutions use 3×3 kernels, the feature extractor 
+ends with a 128×4×4 map, and the classifier is Linear(128·4·4 → 1024) → 1024 → num_classes(=10).
+
+- ResNet architectures
+
+CIFAR-10 ResNets adapted from the standard He et al. implementation: initial conv: 3×3 instead of 7×7
+no initial max-pool
+final pooling adjusted for 32×32 inputs
+Includes implementations of ResNet-18/34 (BasicBlock) and ResNet-50/101/152 (Bottleneck).
+"""
+
+
+
 import torch.nn as nn
 import torch.nn.functional as F
 

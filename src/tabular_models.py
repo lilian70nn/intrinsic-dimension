@@ -15,7 +15,15 @@ In general:
   - Plots that visualize ID alone (or ID vs iteration without accuracy transforms) remain applicable
     to both classification and regression.
 """
-
+"""
+RealMLP_TD is a tabular MLP architecture proposed in
+“Better by Default: Strong Pre-Tuned MLPs and Boosted Trees on Tabular Data”
+(Holzmüller et al., 2022).
+"""
+"""
+TabM is a tabular deep learning architecture proposed in 
+“TabM: Advancing Tabular Deep Learning with Parameter-Efficient Ensembling” (Gorishniy et al., 2021)
+"""
 
 
 

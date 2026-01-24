@@ -1,6 +1,16 @@
+"""
+Core functions to estimate Intrinsic Dimension (ID) from feature activations.
+
+* **`twonn_id`**
+* **`mle_id`**
+* **`repeat_compute`**: A stability wrapper that runs an estimator multiple times on random data subsets 
+and returns the average ID.
+"""
+
 import numpy as np
 import torch
 from sklearn import linear_model
+
 
 def twonn_id(X, device='cuda', batch=512, fraction=0.9, verbose=False, subsample=None):
 

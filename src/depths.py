@@ -1,3 +1,16 @@
+"""
+Layer-enumeration utilities for intrinsic-dimension computation
+
+Depth extraction utilities (getDepths, getResNetsDepths, getDepths_cifar_resnet)
+
+Traverse model layers and record a small set of “checkpoints” (input, pooling / residual blocks, classifier) together 
+with a monotonically increasing depth index.
+
+These depth indices are later used to plot intrinsic dimension vs. relative depth.
+
+"""
+
+
 import numpy as np
 import torch.nn as nn
 from torch.utils.data import Dataset

@@ -1,3 +1,11 @@
+"""
+### Plotting utilities for ID analysis
+* Color/marker helpers by model family
+* `plot_fig3b`: layer-wise ID vs relative depth for multiple models
+* `plot_fig9A/B/C`: ID dynamics over epochs and vs error
+* `plot_fig5c`: trained vs untrained ID / PC-ID / ED across depth
+"""
+
 import re
 import random
 from pathlib import Path
