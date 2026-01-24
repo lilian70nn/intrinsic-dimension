@@ -10,7 +10,7 @@ class TabularEncoder:
 
         self.num_fill = {}          # col -> fill_value (fit on train)
         self.cat_maps = {}          # col -> dict(value_str -> index)
-        self.cat_cardinalities = [] # in same order as cat_cols
+        self.cat_cardinalities = [] # cardinality = number of non-missing categories (train-only)
 
         self._is_fitted = False
 
@@ -44,6 +44,12 @@ class TabularEncoder:
         return self
 
     def transform(self, X: pd.DataFrame):
+
+        # Categorical encoding:
+        # - Known categories (seen in training) -> indices 0 .. K-1
+        # - Missing values -> -1
+        # - OOV values (unseen at test time) -> -1, it will be handled explicitly inside the model
+
         if not self._is_fitted:
             raise RuntimeError("Call fit(X_train) before transform().")
 
