@@ -42,7 +42,6 @@ def compute_id_dynamics_across_models(models, estimators, dataloader, depth_fns,
     id_all_model = {}
     for model_name, model in iterator:
 
-        model_dict = {}
         model = model.to(device)
         model = model.eval()
 
