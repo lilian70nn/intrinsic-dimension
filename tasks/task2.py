@@ -30,11 +30,13 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
     adult_train,adult_test, adult_num_numerical, adult_cardinality = make_dataloaders(adult,num_train,num_test,seed=42)
     
     RealMLP_adult={"RealMLP":RealMLP_TD(adult_num_numerical,adult_cardinality,num_classes=2)}
-    RealMLP_adult["RealMLP"].fit_statistics(adult_train.dataset.tensors[0],
-                                adult_train.dataset.tensors[1])
+    RealMLP_adult["RealMLP"].fit_statistics(
+        adult_train.dataset.x_num,
+        adult_train.dataset.x_cat
+    )
 
     StandardMLP_adult={"StandardMLP":StandardMLP(adult_num_numerical,adult_cardinality,num_classes=2)}
-    StandardMLP_adult["StandardMLP"].fit_statistics(adult_train.dataset.tensors[0])
+    StandardMLP_adult["StandardMLP"].fit_statistics(adult_train.dataset.x_num)
 
     depth_fns = {
          "RealMLP":getDepths_RealMLP_TD,
@@ -299,11 +301,13 @@ def evaluate_model_on_data(data_id, model_name, num_classes, opt_lr, opt_wd,num_
     train_loader, test_loader, num_numerical, cardinality = make_dataloaders(data, num_train, num_test, seed=42)
     if model_name == "RealMLP":
         model = {model_name: MODELS[model_name](num_numerical, cardinality, num_classes)}
-        model[model_name].fit_statistics(train_loader.dataset.tensors[0],
-                                        train_loader.dataset.tensors[1])
+        model[model_name].fit_statistics(
+            train_loader.dataset.x_num,
+            train_loader.dataset.x_cat
+        )
     elif model_name == "StandardMLP":
         model = {model_name: MODELS[model_name](num_numerical, cardinality, num_classes)}
-        model[model_name].fit_statistics(train_loader.dataset.tensors[0])
+        model[model_name].fit_statistics(train_loader.dataset.x_num)
     elif model_name == "TabM":
         model = {model_name: MODELS[model_name](num_numerical, cardinality, k, num_classes)}
     else:
