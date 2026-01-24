@@ -46,7 +46,7 @@ def train(global_batch,
 
 
     for batch in train_loader:
-        # Handle Tabular (3-item) vs Image (2-item) batches
+
         inputs, y = batch
         inputs = to_device(inputs, device)
         y = y.to(device)
@@ -110,7 +110,7 @@ def test(model,dataloader,criterion,metrics,device):
 
     with torch.no_grad():
         for batch in dataloader:
-            
+
             inputs, y = batch
             inputs = to_device(inputs, device)
             y = y.to(device)
@@ -231,18 +231,30 @@ def train_and_compute_id(
 
 
 # Loss and metric definitions.
-def ce_ensemble_sum(outputs, targets):
+def classif_ce_ensemble_sum(outputs, targets):
     B, k, C = outputs.shape
     outputs_flat = outputs.reshape(B * k, C)
     y_flat = targets.repeat_interleave(k)
     ce_sum = torch.nn.CrossEntropyLoss(reduction="sum")(outputs_flat, y_flat)
     return ce_sum/k
 
-def accuracy_ensemble_sum(outputs, targets):
+def classif_accuracy_ensemble_sum(outputs, targets):
     ensemble_logits = outputs.mean(dim=1)
     preds = ensemble_logits.argmax(dim=1)
     return (preds == targets).sum()
 
+def regress_mse_ensemble_sum(outputs, targets):
+    B, k = outputs.shape
+    outputs_flat = outputs.reshape(B * k)
+    y_flat = targets.repeat_interleave(k)
+    mse_sum = torch.nn.MSELoss(reduction="sum")(outputs_flat, y_flat)
+    return mse_sum/k
+
+
 def accuracy_sum(outputs, targets):
     preds = outputs.argmax(dim=1)
     return (preds == targets).sum()
+
+def mse_sum(outputs, targets):
+    mse = torch.nn.MSELoss(reduction="sum")(outputs, targets)
+    return mse
