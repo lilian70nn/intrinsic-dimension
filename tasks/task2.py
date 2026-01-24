@@ -6,7 +6,7 @@ from sklearn.datasets import fetch_openml
 
 from src.id.estimator import twonn_id
 from src.id.compute import compute_id_dynamics_across_models
-from src.train_and_test_old import train_and_compute_id
+from src.train_and_test import train_and_compute_id
 from src.plots import plot_fig3b, plot_fig5c, plot_fig9A, plot_fig9B, plot_fig9C
 from src.tabular_preprocessing import make_dataloaders
 from src.tabular_depths import getDepths_RealMLP_TD, getDepths_StandardMLP, getDepths_TabM
