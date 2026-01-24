@@ -147,7 +147,7 @@ Use `--help` to see available options for each task.
 - **MLE**: Maximum Likelihood Estimator
 
 ### Model Architectures
-- **CNNs**: VGG, ResNet, AlexNet variants
+- **CNNs**: VGG, ResNet, AlexNet, along with their variants adapted for CIFAR-10
 - **Tabular**: RealMLP, StandardMLP, TabM
 - **NLP**: RoBERTa-based models
 
