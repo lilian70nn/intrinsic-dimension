@@ -17,3 +17,16 @@ class PathListDataset(Dataset):
 
         dummy_label = 0
         return img, dummy_label
+    
+
+class TabularPairDataset(Dataset):
+    def __init__(self, x_num, x_cat, y):
+        self.x_num = x_num
+        self.x_cat = x_cat
+        self.y = y
+
+    def __len__(self):
+        return self.y.shape[0]
+
+    def __getitem__(self, idx):
+        return (self.x_num[idx], self.x_cat[idx]), self.y[idx]
