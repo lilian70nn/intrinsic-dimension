@@ -1,3 +1,24 @@
+"""
+All models support both classification and regression via the `num_classes` argument:
+    - Regression: set `num_classes=None`
+    - Classification: set `num_classes=<int>`
+
+Plotting utilities and task-specific caveats
+Some plotting utilities in this codebase reproduce figures from a classification-focused paper
+(e.g., plots that assume "accuracy in [0, 1]" and convert to "error (%)" via (1 - acc) * 100).
+For regression experiments, these plots will generally still run, but metric curves may be
+poorly scaled or harder to interpret (e.g., flattened or visually suppressed) unless adapted
+to regression-style metrics (MSE/SSE/MAE).
+
+In general:
+  - Plots that depend on classification accuracy/error are classification-only unless modified.
+  - Plots that visualize ID alone (or ID vs iteration without accuracy transforms) remain applicable
+    to both classification and regression.
+"""
+
+
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
