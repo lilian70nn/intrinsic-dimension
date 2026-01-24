@@ -193,7 +193,7 @@ def task1_2_fig5c_fig9_training_dynamics(show=True,
 
         model = {model_name: net}
         optimizer = optim.SGD(
-            net.parameters(), lr=0.05, momentum=0.9, weight_decay=5e-4
+            net.parameters(), lr=1e-4, momentum=0.9, weight_decay=5e-4
         )
         total_steps = epochs * len(train_loader)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps)
