@@ -11,7 +11,7 @@ from src.plots import plot_fig3b, plot_fig5c, plot_fig9A, plot_fig9B, plot_fig9C
 from src.tabular_preprocessing_old import make_dataloaders
 from src.tabular_depths import getDepths_RealMLP_TD, getDepths_StandardMLP, getDepths_TabM
 from src.tabular_models import RealMLP_TD, StandardMLP, TabM
-from src.train_and_test import ce_ensemble_sum, accuracy_ensemble_sum, accuracy_sum
+from src.train_and_test import classif_ce_ensemble_sum, classif_accuracy_ensemble_sum, regress_mse_ensemble_sum, accuracy_sum,regress_mse_sum
 
 import argparse
 from pathlib import Path
@@ -287,7 +287,7 @@ depth_fns = {"RealMLP":getDepths_RealMLP_TD,
              }
 
 
-def evaluate_model_on_data(data_id, model_name, num_classes, opt_lr, opt_wd,num_train=20000, num_test=2000,
+def evaluate_model_on_data(data_id, model_name, opt_lr, opt_wd,num_classes=None, num_train=20000, num_test=2000,
                            epochs=15, id_logging_interval=15, estimator=None,
                            depth_fns=depth_fns, device=None, criterion=None, metrics=None,
                            y_lim=50,k=10, savepath=None, show=True):
@@ -318,15 +318,27 @@ def evaluate_model_on_data(data_id, model_name, num_classes, opt_lr, opt_wd,num_
     
     if criterion is None:
         if model_name == "TabM":
-            criterion = ce_ensemble_sum
+            if num_classes is None:
+                criterion = regress_mse_ensemble_sum
+            else:
+                criterion = classif_ce_ensemble_sum
         else:
-            criterion = nn.CrossEntropyLoss()
+            if num_classes is None:
+                criterion = regress_mse_sum
+            else:
+                criterion = torch.nn.CrossEntropyLoss(reduction="sum")
     if metrics is None:
         if model_name == "TabM":
-            metrics = accuracy_ensemble_sum
+            if num_classes is None:
+                metrics = regress_mse_ensemble_sum
+            else:
+                metrics = classif_accuracy_ensemble_sum
         else:
-            metrics = accuracy_sum
-    
+            if num_classes is None:
+                metrics = regress_mse_sum
+            else:
+                metrics = accuracy_sum
+
     optimizer = torch.optim.Adam(
         net.parameters(),
         lr=opt_lr,
