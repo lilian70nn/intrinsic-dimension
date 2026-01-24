@@ -114,16 +114,17 @@ class StandardMLP(nn.Module):
 
         return torch.cat(parts, dim=1)
 
-    def forward(self, x_num, x_cat=None):
+
+    def forward(self, inputs):
 
         '''Forward pass through the model.'''
-
-        if isinstance(x_num, (tuple, list)):
-            x_cat = x_num[1]
-            x_num = x_num[0]
+        x_num, x_cat = inputs
 
         if not self.fitted:
             raise RuntimeError("Call fit_statistics(x_num) before forward().")
+
+        if len(self.cat_cardinalities) == 0 or x_cat.shape[1] == 0:
+            x_cat = None
 
         _ = self.capture_input(x_num if x_cat is None else torch.cat([x_num, x_cat.float()], dim=1))
 
@@ -131,6 +132,7 @@ class StandardMLP(nn.Module):
         _ = self.capture_after_preprocess(x)
 
         return self.mlp(x)
+    
     
 
 
@@ -496,11 +498,13 @@ class RealMLP_TD(nn.Module):
 
 
 
-    def forward(self, x_num, x_cat=None):
+    def forward(self, inputs):
 
-        if isinstance(x_num, (tuple, list)):
-            x_cat = x_num[1]
-            x_num = x_num[0]
+        x_num, x_cat = inputs
+
+        if len(self.cat_cardinalities) == 0 or x_cat.shape[1] == 0:
+            x_cat = None
+
         x = self._forward_to_mlp_input(x_num, x_cat)
         return self.mlp(x)
 
@@ -527,7 +531,7 @@ class TabM(nn.Module):
     """
 
     def __init__(self, num_numerical, cat_cardinalities,
-                 d_block=512, num_classes=2, n_blocks=3, k=16, dropout=0.1, emb_dim=8):
+                 d_block=512, num_classes=None, n_blocks=3, k=16, dropout=0.1, emb_dim=8):
 
 
         """
@@ -545,13 +549,20 @@ class TabM(nn.Module):
         # ----- capture checkpoints -----
         self.capture_input = Capture()
         self.capture_after_preprocess = Capture()
+        self.cat_cardinalities = cat_cardinalities
+        
 
         self.cat_embeddings = nn.ModuleList([
-            nn.Embedding(c, emb_dim) for c in cat_cardinalities
+            nn.Embedding(c+1, emb_dim, padding_idx=0) for c in self.cat_cardinalities
         ])
 
-        backbone_input_dim = num_numerical + len(cat_cardinalities) * emb_dim
+        for emb in self.cat_embeddings:
+            with torch.no_grad():
+                emb.weight[0].zero_()
 
+        backbone_input_dim = num_numerical + len(self.cat_cardinalities) * emb_dim
+
+        out_dim = 1 if num_classes is None else num_classes
 
         layers = []
         # --- 1. Ensemble View Layer (Core) ---
@@ -580,21 +591,26 @@ class TabM(nn.Module):
                 nn.Dropout(dropout),
             ])
         # --- 3. Final Output Layer ---
-        layers.append(tabm.LinearEnsemble(in_features=d_block, out_features=num_classes, k=k))
+        layers.append(tabm.LinearEnsemble(in_features=d_block, out_features=out_dim, k=k))
 
         self.ensemble_mlp = nn.Sequential(*layers)
 
-    def forward(self, x_num, x_cat=None):
+    def forward(self, inputs):
 
-        if isinstance(x_num, (tuple, list)):
-            x_cat = x_num[1]
-            x_num = x_num[0]
+        x_num, x_cat = inputs
+
+        if len(self.cat_cardinalities) == 0 or x_cat.shape[1] == 0:
+            x_cat = None
 
         _ = self.capture_input(x_num if x_cat is None else torch.cat([x_num, x_cat.float()], dim=1))
 
         emb_outs = []
         if x_cat is not None:
-            emb_outs = [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embeddings)]
+            for i, emb in enumerate(self.cat_embeddings):
+                col = x_cat[:, i]
+                col = torch.where(col < 0, torch.zeros_like(col), col + 1)
+                emb_outs.append(emb(col))
+        
         x = torch.cat([x_num] + emb_outs, dim=1)
         _ = self.capture_after_preprocess(x)
 
