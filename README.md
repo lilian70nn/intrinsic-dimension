@@ -108,6 +108,7 @@ Use `--help` to see available options for each task.
 │   ├── depths.py            # Layer depth extraction
 │   ├── plots.py             # Plotting functions
 │   ├── postprocess.py       # Postprocessing utilities
+│   ├── tabular_depths.py    # Tabular-model–specific layer depth extraction
 │   ├── tabular_models.py    # Tabular model definitions
 │   ├── tabular_preprocessing.py
 │   ├── train_and_test.py    # Training utilities
