@@ -411,9 +411,10 @@ def main():
         help="OpenML dataset id (default: 1590=adult). Examples: 1590 (adult), 45551 (higgs), 150 (covertype)."
     )
     p.add_argument("--model", choices=list(MODELS.keys()), default="RealMLP")
-    p.add_argument("--num_classes", type=int, default=2,
+    p.add_argument("--num_classes", type=int, default=None,
                    help=(
-                       "Number of classes for classification. "
+                         "Number of classes for classification. "
+                         "Set to None for regression. "
                          "Examples: adult=2, higgs=2, covertype=7. "
                          "Must match the dataset label space."
                          )
