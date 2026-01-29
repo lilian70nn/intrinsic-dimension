@@ -250,7 +250,7 @@ def classif_accuracy_ensemble_sum(outputs, targets):
 
 def regress_mse_ensemble_sum(outputs, targets):
     B, k, C = outputs.shape
-    outputs_flat = outputs.reshape(B * k, C)
+    outputs_flat = outputs.reshape(B * k, C).squeeze(1)
     y_flat = targets.repeat_interleave(k).float()
     mse_sum = torch.nn.MSELoss(reduction="sum")(outputs_flat, y_flat)
     return mse_sum/k
