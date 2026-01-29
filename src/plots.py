@@ -451,6 +451,136 @@ def plot_fig9C(epoch_records,title,show=True,savepath=None):
         plt.close(fig)
 
 
+def plot_fig9B_regression(batch_records,title,show=True,savepath=None):
+
+    """
+    Regression variant of Fig. 9B:
+    Plot last hidden layer ID together with training/test regression metric
+    (e.g., loss/MSE) across iterations.
+    """
+    batch_records = np.array(batch_records, dtype=object)
+
+    iters = batch_records[:,0].astype(int)
+    train_metric = batch_records[:,1].astype(float)
+    test_metric  = batch_records[:,2]
+    id_vals   = batch_records[:,3]
+
+
+    mask_id = np.array([v is not None for v in id_vals])
+    id_iters = iters[mask_id]
+    id_vals  = id_vals[mask_id].astype(float)
+
+
+    mask_test = np.array([v is not None for v in test_metric])
+    test_iters = iters[mask_test]
+    test_metric   = test_metric[mask_test].astype(float)
+
+
+    fig, ax1 = plt.subplots(figsize=(8,6))
+
+    ax1.plot(id_iters, id_vals, 'o-', color='black', label="ID last hidden layer")
+    ax1.set_xlabel("iterations (n. of mini-batches)")
+    ax1.set_ylabel("ID")
+    ax1.set_ylim(0, max(id_vals)*1.2)
+
+    ax2 = ax1.twinx()
+    ax2.plot(iters, train_metric, linestyle='--', color='red', alpha=0.6, label="training metric")
+    ax2.plot(test_iters, test_metric, linestyle='-', color='blue', label="test metric")
+    ax2.set_ylabel("metric")
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
+    ax1.set_title(title)
+    plt.tight_layout()
+
+    if savepath is not None:
+        outdir = Path(savepath)
+        outdir.mkdir(parents=True, exist_ok=True)
+        outfile = outdir / title_to_filename(title)
+        plt.savefig(outfile, dpi=300, bbox_inches="tight")
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+
+
+
+def plot_fig9C_regression(epoch_records,title,show=True,savepath=None):
+
+
+    """
+    Regression variant of Fig. 9C:
+    Plot test regression metric (e.g., loss/MSE) vs last hidden layer ID across epochs.
+    """
+
+    epochs = []
+    metrics = []
+    ids_last = []
+
+    for rec in epoch_records:
+        epoch = rec[0]
+        test_metric = rec[1]
+        id_list = rec[2]
+
+        mean_id = id_list[-2]
+
+        epochs.append(epoch)
+        metrics.append(test_metric)
+        ids_last.append(float(mean_id))
+
+    epochs = np.array(epochs, dtype=float)
+    metrics = np.array(metrics, dtype=float)
+    ids_last = np.array(ids_last, dtype=float)
+
+    fig, ax = plt.subplots(figsize=(6,6))
+
+    cmap = cm.get_cmap("viridis")
+    norm = Normalize(vmin=epochs.min(), vmax=epochs.max())
+
+    sc = ax.scatter(metrics, ids_last,
+                     c=epochs, cmap=cmap, norm=norm,
+                     s=20, edgecolors='none')
+
+    ax.set_xlabel("test metric")
+    ax.set_ylabel("ID")
+
+    ymin = max(0, ids_last.min() - 1)
+    ymax = ids_last.max() + 1
+    ax.set_ylim(ymin, ymax)
+
+    cbar = plt.colorbar(sc)
+    cbar.set_label("epoch")
+
+    highlight_epochs = [0, 1, 2, 5, 10, len(epochs)-1]
+    for ep in highlight_epochs:
+        if ep in epochs:
+            i = np.where(epochs == ep)[0][0]
+            ax.scatter(metrics[i], ids_last[i],
+                        s=80, facecolors='none', edgecolors='lightgreen', linewidths=1.5)
+            ax.text(metrics[i]+1, ids_last[i],
+                     f"EPOCH {int(ep)}",
+                     fontsize=8, color="seagreen", rotation=40)
+
+
+    ax.set_title(title)
+    plt.tight_layout()
+
+    if savepath is not None:
+        outdir = Path(savepath)
+        outdir.mkdir(parents=True, exist_ok=True)
+        outfile = outdir / title_to_filename(title)
+        plt.savefig(outfile, dpi=300, bbox_inches="tight")
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+
+
 
 def rescale_to_range(arr, new_min=0, new_max=400):
     arr = np.asarray(arr, dtype=float)
