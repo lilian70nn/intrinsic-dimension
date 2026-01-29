@@ -7,7 +7,7 @@ from sklearn.datasets import fetch_openml
 from src.id.estimator import twonn_id
 from src.id.compute import compute_id_dynamics_across_models
 from src.train_and_test import train_and_compute_id
-from src.plots import plot_fig3b, plot_fig5c, plot_fig9A, plot_fig9B, plot_fig9C
+from src.plots import plot_fig3b, plot_fig5c, plot_fig9A, plot_fig9B, plot_fig9C, plot_fig9B_regression, plot_fig9C_regression
 from src.tabular_preprocessing import make_dataloaders
 from src.tabular_depths import getDepths_RealMLP_TD, getDepths_StandardMLP, getDepths_TabM
 from src.tabular_models import RealMLP_TD, StandardMLP, TabM
@@ -197,7 +197,7 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
 
 
 
-def report_id_statistics(model, estimator, train_loader, test_loader, data_name,
+def report_id_statistics(model, num_classes, estimator, train_loader, test_loader, data_name,
                          depth_fns, epochs, optimizer, criterion, metrics, id_logging_interval,
                          device, epoch_scheduler=None, batch_scheduler=None,y_lim=50,
                          show=True,savepath=None):
@@ -242,14 +242,25 @@ def report_id_statistics(model, estimator, train_loader, test_loader, data_name,
                annotate=True,
                show=show,
                savepath=savepath)
-    plot_fig9B(result_per_batch,
-               title=f"{model_name}: last hidden layer ID & accuracy during training",
+    
+    if num_classes is None:
+        plot_fig9B_regression(result_per_batch,
+               title=f"{model_name}: last hidden layer ID & regression metric during training",
                show=show,
                savepath=savepath)
-    plot_fig9C(result_per_epoch,
-               title=f"{model_name}: test error vs last hidden layer ID",
+        plot_fig9C_regression(result_per_epoch,
+               title=f"{model_name}: test regression metric vs last hidden layer ID",
                show=show,
                savepath=savepath)
+    else:
+        plot_fig9B(result_per_batch,
+                title=f"{model_name}: last hidden layer ID & accuracy during training",
+                show=show,
+                savepath=savepath)
+        plot_fig9C(result_per_epoch,
+                title=f"{model_name}: test error vs last hidden layer ID",
+                show=show,
+                savepath=savepath)
 
     id_dynamics_trained = compute_id_dynamics_across_models(
         model_best,
@@ -269,6 +280,8 @@ def report_id_statistics(model, estimator, train_loader, test_loader, data_name,
     f"({model_name}) Before and After Training (TwoNN)"
     )
     plot_fig3b(id_dynamics,"TwoNN",title,annotate=True,show=show,savepath=savepath)
+
+
 
 
 
@@ -351,6 +364,7 @@ def evaluate_model_on_data(data_id, model_name, opt_lr, opt_wd,num_classes=None,
 
     report_id_statistics(
         model,
+        num_classes,
         estimator,
         train_loader,
         test_loader,
