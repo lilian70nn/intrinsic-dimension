@@ -243,6 +243,7 @@ def report_id_statistics(model, num_classes, estimator, train_loader, test_loade
                show=show,
                savepath=savepath)
     
+    # Use task-specific plotting: regression vs classification
     if num_classes is None:
         plot_fig9B_regression(result_per_batch,
                title=f"{model_name}: last hidden layer ID & regression metric during training",
