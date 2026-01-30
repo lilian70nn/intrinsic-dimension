@@ -3,12 +3,11 @@ All models support both classification and regression via the `num_classes` argu
     - Regression: set `num_classes=None`
     - Classification: set `num_classes=<int>`
 
-Plotting utilities and task-specific caveats
-Some plotting utilities in this codebase reproduce figures from a classification-focused paper
-(e.g., plots that assume "accuracy in [0, 1]" and convert to "error (%)" via (1 - acc) * 100).
-For regression experiments, these plots will generally still run, but metric curves may be
-poorly scaled or harder to interpret (e.g., flattened or visually suppressed) unless adapted
-to regression-style metrics (MSE/SSE/MAE).
+Plotting utilities and task-specific notes
+Some plotting utilities reproduce figures from a classification-focused reference and assume
+accuracy/error semantics (e.g., error (%) = (1 - acc) * 100). For regression experiments,
+use the corresponding regression-adapted plotting functions (e.g., `plot_fig9B_regression`,
+`plot_fig9C_regression`) which plot regression metrics directly (loss/MSE/MAE).
 
 In general:
   - Plots that depend on classification accuracy/error are classification-only unless modified.
