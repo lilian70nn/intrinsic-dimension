@@ -9,10 +9,9 @@ accuracy/error semantics (e.g., error (%) = (1 - acc) * 100). For regression exp
 use the corresponding regression-adapted plotting functions (e.g., `plot_fig9B_regression`,
 `plot_fig9C_regression`) which plot regression metrics directly (loss/MSE/MAE).
 
-In general:
-  - Plots that depend on classification accuracy/error are classification-only unless modified.
-  - Plots that visualize ID alone (or ID vs iteration without accuracy transforms) remain applicable
-    to both classification and regression.
+General guidelines:
+  - Use task-appropriate plotting functions depending on the metric semantics.
+  - Plots that visualize ID alone remain applicable to both classification and regression.
 """
 """
 RealMLP_TD is a tabular MLP architecture proposed in
