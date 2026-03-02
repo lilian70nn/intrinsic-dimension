@@ -200,7 +200,7 @@ def adult_id_full_experiment(show=True,savepath=None,device=None,
 def report_id_statistics(model, num_classes, estimator, train_loader, test_loader, data_name,
                          depth_fns, epochs, optimizer, criterion, metrics, id_logging_interval,
                          device, epoch_scheduler=None, batch_scheduler=None,y_lim=50,
-                         show=True,savepath=None):
+                         show=True,savepath=None, maximize=None):
 
     (model_name, net), = model.items()
     print(f"--- Starting Analysis for {model_name} on {data_name} ---")
@@ -230,7 +230,7 @@ def report_id_statistics(model, num_classes, estimator, train_loader, test_loade
             batch_scheduler=batch_scheduler,
             epoch_scheduler=epoch_scheduler,
             depth_fns=depth_fns,
-            maximize=(num_classes is not None)
+            maximize=(maximize if maximize is not None else (num_classes is not None))
 
         )
 
@@ -305,7 +305,7 @@ depth_fns = {"RealMLP":getDepths_RealMLP_TD,
 
 def evaluate_model_on_data(data_id, model_name, opt_lr, opt_wd,num_classes=None, num_train=20000, num_test=2000,
                            epochs=15, id_logging_interval=15, estimator=None,
-                           depth_fns=depth_fns, device=None, criterion=None, metrics=None,
+                           depth_fns=depth_fns, device=None, criterion=None, metrics=None, maximize=None,
                            y_lim=50,k=10, savepath=None, show=True):
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -386,7 +386,8 @@ def evaluate_model_on_data(data_id, model_name, opt_lr, opt_wd,num_classes=None,
         batch_scheduler=scheduler,
         y_lim=y_lim,
         show=show,
-        savepath=savepath
+        savepath=savepath,
+        maximize=maximize
     )
 
 
