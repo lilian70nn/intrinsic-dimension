@@ -121,3 +121,39 @@ def make_dataloaders(data, num_train, num_test, seed):
     test_loader  = DataLoader(test_ds, batch_size=128, shuffle=False)
 
     return train_loader, test_loader, X_train_num.shape[1], enc.cat_cardinalities
+
+def make_dataloaders_regression(data, num_train, num_test, seed):
+    X = data.data
+    y = data.target
+
+    rng = np.random.RandomState(seed)
+    indices = np.arange(len(X))
+    rng.shuffle(indices)
+
+    train_idx = indices[:num_train]
+    test_idx = indices[num_train:num_train + num_test]
+
+    X_train_df = X.iloc[train_idx]
+    X_test_df  = X.iloc[test_idx]
+
+    # 1) Fit encoder on TRAIN only
+    enc = TabularEncoder().fit(X_train_df)
+
+    # 2) Transform both with same encoder
+    X_train_num, X_train_cat = enc.transform(X_train_df)
+    X_test_num,  X_test_cat  = enc.transform(X_test_df)
+
+    # y encoding (REGRESSION): keep continuous
+    # Make sure y is numeric
+    y_all = np.asarray(y, dtype="float32")
+
+    y_train = torch.tensor(y_all[train_idx], dtype=torch.float32)
+    y_test  = torch.tensor(y_all[test_idx], dtype=torch.float32)
+
+    train_ds = TabularPairDataset(X_train_num, X_train_cat, y_train)
+    test_ds  = TabularPairDataset(X_test_num, X_test_cat, y_test)
+
+    train_loader = DataLoader(train_ds, batch_size=256, shuffle=True, num_workers=2)
+    test_loader  = DataLoader(test_ds, batch_size=128, shuffle=False)
+
+    return train_loader, test_loader, X_train_num.shape[1], enc.cat_cardinalities
