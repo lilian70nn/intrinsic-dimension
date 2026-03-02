@@ -125,8 +125,11 @@ Use `--help` to see available options for each task.
 
 ## Requirements
 
-- Python 3.7+
-- PyTorch 1.9+
+Experiments were executed on Google Colab using a GPU runtime. Package versions may slightly differ across platforms. The provided `requirements.txt` lists the main dependencies required to run the code, while the exact execution environment corresponds to the default Colab setup.
+
+- Python
+- PyTorch
+- Pandas
 - torchvision
 - numpy
 - scipy
