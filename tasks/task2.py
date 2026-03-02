@@ -8,7 +8,7 @@ from src.id.estimator import twonn_id
 from src.id.compute import compute_id_dynamics_across_models
 from src.train_and_test import train_and_compute_id
 from src.plots import plot_fig3b, plot_fig5c, plot_fig9A, plot_fig9B, plot_fig9C, plot_fig9B_regression, plot_fig9C_regression
-from src.tabular_preprocessing import make_dataloaders
+from src.tabular_preprocessing import make_dataloaders, make_dataloaders_regression
 from src.tabular_depths import getDepths_RealMLP_TD, getDepths_StandardMLP, getDepths_TabM
 from src.tabular_models import RealMLP_TD, StandardMLP, TabM
 from src.train_and_test import classif_ce_ensemble_sum, classif_accuracy_ensemble_sum, regress_mse_ensemble_sum, accuracy_sum,regress_mse_sum
@@ -229,7 +229,9 @@ def report_id_statistics(model, num_classes, estimator, train_loader, test_loade
             device=device,
             batch_scheduler=batch_scheduler,
             epoch_scheduler=epoch_scheduler,
-            depth_fns=depth_fns
+            depth_fns=depth_fns,
+            maximize=(num_classes is not None)
+
         )
 
     plot_fig5c(model_name, result_0_and_best_epoch, 
@@ -312,7 +314,11 @@ def evaluate_model_on_data(data_id, model_name, opt_lr, opt_wd,num_classes=None,
 
     data = fetch_openml(data_id=data_id, as_frame=True)
     data_name = data.details.get("name", f"openml_{data_id}")
-    train_loader, test_loader, num_numerical, cardinality = make_dataloaders(data, num_train, num_test, seed=42)
+    if num_classes is not None:
+        train_loader, test_loader, num_numerical, cardinality = make_dataloaders(data, num_train, num_test, seed=42)
+    else:
+        train_loader, test_loader, num_numerical, cardinality = make_dataloaders_regression(data, num_train, num_test, seed=42)
+
     if model_name == "RealMLP":
         model = {model_name: MODELS[model_name](num_numerical, cardinality, num_classes)}
         model[model_name].fit_statistics(
